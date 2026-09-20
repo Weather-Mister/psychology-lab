@@ -1,1 +1,0 @@
-ALTER TABLE psychology_profiles ADD COLUMN IF NOT EXISTS state_text TEXT NOT NULL DEFAULT '{}'
