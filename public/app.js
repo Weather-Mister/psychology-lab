@@ -78,6 +78,16 @@
     if (!Object.keys(out).length) out.general = { title: "General Notes", text: "", createdAt: 0, updatedAt: 0, deleted: false };
     return out;
   }
+  function parseState(value) {
+    if (value && typeof value === "object" && !Array.isArray(value)) return value;
+    try {
+      const parsed = JSON.parse(String(value || "{}"));
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
   function normalizeStateShape(value) {
     const raw = value && typeof value === "object" && !Array.isArray(value) ? value : {};
     return {
