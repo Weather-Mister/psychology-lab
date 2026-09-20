@@ -5,22 +5,22 @@ This GitHub repository is the source of truth for Psychology Lab development.
 
 ## Architecture
 - `public/`: browser frontend deployed by GitHub Pages.
-- `supabase/functions/psychology-profile/`: live profile load/save API source.
 - `supabase/migrations/`: Psychology database schema and RPC history.
 - Live Supabase project: `statistics-r-lab` (`ibkirlsqpzmhuwssdcjj`).
-- Live Edge Function: `psychology-profile`.
+- Profile sync uses the Supabase REST RPC endpoints `psychology_profile_load` and `psychology_profile_save`.
+- Browser code uses only the Supabase publishable key. Never put a secret/service-role key in `public/`.
 
 ## Preservation invariant
 Do not redesign, reset, re-seed, or silently change the site. Preserve the current UI, course content, notes, flashcards, matching, quizzes, usernames, profile state, revisions, and stored database rows unless the user explicitly asks for a change.
 
 ## Frontend development
-Edit files in `public/`. Asset URLs must remain GitHub Pages-compatible (relative paths, not repository-root `/` paths). Profile sync must use the Supabase `psychology-profile` Edge Function.
+Edit files in `public/`. Asset URLs must remain GitHub Pages-compatible (relative paths, not repository-root `/` paths).
 
 ## Backend development
 For backend changes:
-1. Edit the matching source under `supabase/functions/` or `supabase/migrations/` in this repository.
-2. Apply database changes to Supabase project `ibkirlsqpzmhuwssdcjj`.
-3. Deploy the `psychology-profile` Edge Function when its source changes.
+1. Record database/RPC changes under `supabase/migrations/`.
+2. Apply changes to Supabase project `ibkirlsqpzmhuwssdcjj`.
+3. Keep direct table access blocked for browser roles; expose only the narrowly scoped profile RPCs needed by the app.
 4. Never recreate or clear the existing Psychology profile table for ordinary development.
 5. Treat migrations as additive and data-preserving.
 
