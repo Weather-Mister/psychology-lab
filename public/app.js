@@ -156,22 +156,29 @@
           p_expected_revision: body.expectedRevision
         };
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 12000);
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 12000) : null;
     try {
       const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${rpc}`, {
         method: "POST",
         headers: {
+          "apikey": SUPABASE_KEY,
           "Content-Type": "application/json",
-          "apikey": SUPABASE_KEY
+          "Cache-Control": "no-store"
         },
         body: JSON.stringify(payload),
-        signal: controller.signal,
-        cache: "no-store"
+        cache: "no-store",
+        ...(controller ? { signal: controller.signal } : {})
       });
-      const data = await response.json().catch(() => null);
+
+      const raw = await response.text();
+      let data = null;
+      try { data = raw ? JSON.parse(raw) : null; } catch { data = raw; }
+
       if (!response.ok) {
-        const err = new Error(data?.message || data?.error || `Request failed (${response.status})`);
+        const message = (data && typeof data === "object" && (data.message || data.error || data.hint))
+          || `Cloud request failed (${response.status})`;
+        const err = new Error(message);
         err.status = response.status;
         err.data = data;
         throw err;
@@ -199,7 +206,12 @@
         throw err;
       }
       return result;
-    } finally { clearTimeout(timer); }
+    } catch (error) {
+      if (error?.name === "AbortError") throw new Error("Cloud request timed out");
+      throw error;
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+    }
   }
 
   async function login(name) {
