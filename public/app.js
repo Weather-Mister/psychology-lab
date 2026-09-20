@@ -1,5 +1,5 @@
 (() => {
-  const API = window.__HATCHABLE__?.api || "https://psychology-lab.hatchable.site/api";
+  const API = "https://ibkirlsqpzmhuwssdcjj.supabase.co/functions/v1/psychology-profile";
   const COURSE = window.PSYCH_COURSE;
   const ICONS = {
     brain: '<path d="M9.5 4.6A2.6 2.6 0 0 0 4.4 5.3v.4A3.7 3.7 0 0 0 3 12.8a3.8 3.8 0 0 0 3.6 5.1h.2A2.8 2.8 0 0 0 9.5 21V4.6Z"/><path d="M14.5 4.6a2.6 2.6 0 0 1 5.1.7v.4A3.7 3.7 0 0 1 21 12.8a3.8 3.8 0 0 1-3.6 5.1h-.2a2.8 2.8 0 0 1-2.7 3.1V4.6Z"/><path d="M9.5 8.2H7.8a2 2 0 0 0-2 2M14.5 8.2h1.7a2 2 0 0 1 2 2M9.5 14.8H8a2 2 0 0 1-2-2M14.5 14.8H16a2 2 0 0 0 2-2"/>',
@@ -142,12 +142,15 @@
   }
 
   async function api(path, body) {
+    const action = path === "/profile/load" ? "load" : path === "/profile/save" ? "save" : "";
+    if (!action) throw new Error("Unknown API path.");
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 12000);
     try {
-      const response = await fetch(API + path, {
+      const response = await fetch(API, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body), signal: controller.signal, cache: "no-store"
+        body: JSON.stringify({ action, ...body }), signal: controller.signal, cache: "no-store"
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
