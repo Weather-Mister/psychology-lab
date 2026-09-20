@@ -1,5 +1,6 @@
 (() => {
-  const API = "https://ibkirlsqpzmhuwssdcjj.supabase.co/functions/v1/psychology-profile";
+  const SUPABASE_URL = "https://ibkirlsqpzmhuwssdcjj.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_gJRYvB2xFG38UrWiWOUu0A_ZtckUPmx";
   const COURSE = window.PSYCH_COURSE;
   const ICONS = {
     brain: '<path d="M9.5 4.6A2.6 2.6 0 0 0 4.4 5.3v.4A3.7 3.7 0 0 0 3 12.8a3.8 3.8 0 0 0 3.6 5.1h.2A2.8 2.8 0 0 0 9.5 21V4.6Z"/><path d="M14.5 4.6a2.6 2.6 0 0 1 5.1.7v.4A3.7 3.7 0 0 1 21 12.8a3.8 3.8 0 0 1-3.6 5.1h-.2a2.8 2.8 0 0 1-2.7 3.1V4.6Z"/><path d="M9.5 8.2H7.8a2 2 0 0 0-2 2M14.5 8.2h1.7a2 2 0 0 1 2 2M9.5 14.8H8a2 2 0 0 1-2-2M14.5 14.8H16a2 2 0 0 0 2-2"/>',
@@ -142,22 +143,62 @@
   }
 
   async function api(path, body) {
-    const action = path === "/profile/load" ? "load" : path === "/profile/save" ? "save" : "";
-    if (!action) throw new Error("Unknown API path.");
+    const isLoad = path === "/profile/load";
+    const isSave = path === "/profile/save";
+    if (!isLoad && !isSave) throw new Error("Unknown API path.");
+
+    const rpc = isLoad ? "psychology_profile_load" : "psychology_profile_save";
+    const payload = isLoad
+      ? { p_username: body.username }
+      : {
+          p_username: body.username,
+          p_state_text: JSON.stringify(body.state),
+          p_expected_revision: body.expectedRevision
+        };
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 12000);
     try {
-      const response = await fetch(API, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, ...body }), signal: controller.signal, cache: "no-store"
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${rpc}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+        cache: "no-store"
       });
-      const data = await response.json().catch(() => ({}));
+      const data = await response.json().catch(() => null);
       if (!response.ok) {
-        const err = new Error(data.error || `Request failed (${response.status})`);
-        err.status = response.status; err.data = data; throw err;
+        const err = new Error(data?.message || data?.error || `Request failed (${response.status})`);
+        err.status = response.status;
+        err.data = data;
+        throw err;
       }
-      return data;
+
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row) throw new Error("Empty profile response.");
+
+      if (isLoad) {
+        return {
+          username: row.username,
+          state: parseState(row.state_text),
+          revision: Number(row.revision || 0)
+        };
+      }
+
+      const result = {
+        state: parseState(row.state_text),
+        revision: Number(row.revision || 0)
+      };
+      if (!row.ok) {
+        const err = new Error("Profile changed elsewhere.");
+        err.status = 409;
+        err.data = result;
+        throw err;
+      }
+      return result;
     } finally { clearTimeout(timer); }
   }
 
