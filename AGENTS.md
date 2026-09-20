@@ -9,6 +9,7 @@ This GitHub repository is the source of truth for Psychology Lab development.
 - Live Supabase project: `statistics-r-lab` (`ibkirlsqpzmhuwssdcjj`).
 - Profile sync uses the Supabase REST RPC endpoints `psychology_profile_load` and `psychology_profile_save`.
 - Browser code uses only the Supabase publishable key. Never put a secret/service-role key in `public/`.
+- The RPC sets `app.psychology_profile_username` for the transaction; RLS restricts SELECT/INSERT/UPDATE to that username. Unscoped browser-role table reads return no rows.
 
 ## Preservation invariant
 Do not redesign, reset, re-seed, or silently change the site. Preserve the current UI, course content, notes, flashcards, matching, quizzes, usernames, profile state, revisions, and stored database rows unless the user explicitly asks for a change.
@@ -20,7 +21,7 @@ Edit files in `public/`. Asset URLs must remain GitHub Pages-compatible (relativ
 For backend changes:
 1. Record database/RPC changes under `supabase/migrations/`.
 2. Apply changes to Supabase project `ibkirlsqpzmhuwssdcjj`.
-3. Keep direct table access blocked for browser roles; expose only the narrowly scoped profile RPCs needed by the app.
+3. Keep Psychology data accessible only through the username-scoped RLS/RPC pattern.
 4. Never recreate or clear the existing Psychology profile table for ordinary development.
 5. Treat migrations as additive and data-preserving.
 
