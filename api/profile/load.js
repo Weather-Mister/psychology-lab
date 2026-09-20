@@ -4,7 +4,7 @@ export const access = "public";
 export const methods = ["POST", "OPTIONS"];
 
 function applyCors(req, res) {
-  const origin = String(req.headers?.origin || "");
+  const origin = String(req.headers?.origin || req.headers?.Origin || "");
   const allowed = origin === "https://weather-mister.github.io" || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
   if (allowed) res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Vary", "Origin");
