@@ -1,7 +1,16 @@
 import { db } from "hatchable";
 
 export const access = "public";
-export const methods = ["POST"];
+export const methods = ["POST", "OPTIONS"];
+
+function applyCors(req, res) {
+  const origin = String(req.headers?.origin || "");
+  const allowed = origin === "https://weather-mister.github.io" || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+  if (allowed) res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
 
 function normalize(value) {
   return String(value || "").trim().toLowerCase();
@@ -14,6 +23,8 @@ function parseState(text) {
 }
 
 export default async function (req, res) {
+  applyCors(req, res);
+  if (req.method === "OPTIONS") return res.status(204).send("");
   const username = normalize(req.body?.username);
   const state = req.body?.state;
   const expectedRevision = Number(req.body?.expectedRevision);
