@@ -11,3 +11,5 @@ The browser uses the Supabase REST RPC endpoints `psychology_profile_load` and `
 The Psychology profile data was migrated from Hatchable without resetting usernames, notes, progress, flashcards, matching state, quiz state, revisions, or timestamps.
 
 Frontend: https://weather-mister.github.io/psychology-lab/
+
+<!-- Pages republish trigger: restored public repository visibility, 2026-10-20. -->
