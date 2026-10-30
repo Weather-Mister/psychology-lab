@@ -12,16 +12,22 @@ final class PhotoLibrary: ObservableObject {
     private let indexURL: URL
     private let files: FileManager = .default
     private let renderer = FilmRenderer.shared
+    private var metadataLoadFailed = false
     private var thumbnailGeneration: [UUID: UUID] = [:]
 
     init() {
         root = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("GrainlightPhotos", isDirectory: true)
         indexURL = root.appendingPathComponent("library.json")
-        try? files.createDirectory(at: root, withIntermediateDirectories: true)
-        if let data = try? Data(contentsOf: indexURL),
-           let decoded = try? JSONDecoder().decode([PhotoRecord].self, from: data) {
-            photos = decoded.sorted { $0.createdAt > $1.createdAt }
+        do {
+            try files.createDirectory(at: root, withIntermediateDirectories: true)
+            if files.fileExists(atPath: indexURL.path) {
+                let data = try Data(contentsOf: indexURL)
+                photos = try JSONDecoder().decode([PhotoRecord].self, from: data).sorted { $0.createdAt > $1.createdAt }
+            }
+        } catch {
+            metadataLoadFailed = true
+            lastError = "Could not open the photo library. Existing files are preserved: \(error.localizedDescription)"
         }
     }
 
@@ -34,13 +40,19 @@ final class PhotoLibrary: ObservableObject {
 
     @discardableResult
     func saveCapture(_ data: Data, isRAW: Bool) throws -> PhotoRecord {
+        guard !metadataLoadFailed else { throw ImportError.libraryUnavailable }
         let id = UUID()
         let file = "\(id.uuidString).\(isRAW ? "dng" : "jpg")"
         try data.write(to: root.appendingPathComponent(file), options: .atomic)
         let newRecord = PhotoRecord(id: id, createdAt: Date(), filename: file,
                                     isRAW: isRAW, edits: .signature)
         photos.insert(newRecord, at: 0)
-        saveIndex()
+        do { try saveIndex() }
+        catch {
+            photos.removeAll { $0.id == id }
+            try? files.removeItem(at: root.appendingPathComponent(file))
+            throw error
+        }
         generateThumbnail(for: newRecord)
         if UserDefaults.standard.bool(forKey: "autoExport") {
             exportToPhotos(newRecord)
@@ -56,31 +68,45 @@ final class PhotoLibrary: ObservableObject {
         guard ["dng", "jpg", "jpeg", "heic", "heif", "png", "tif", "tiff"].contains(ext) else {
             throw ImportError.unsupported
         }
+        guard !metadataLoadFailed else { throw ImportError.libraryUnavailable }
         let id = UUID()
         let file = "\(id.uuidString).\(ext)"
         try files.copyItem(at: chosenURL, to: root.appendingPathComponent(file))
         let newRecord = PhotoRecord(id: id, createdAt: Date(), filename: file,
                                     isRAW: ext == "dng", edits: .signature)
         photos.insert(newRecord, at: 0)
-        saveIndex()
+        do { try saveIndex() }
+        catch {
+            photos.removeAll { $0.id == id }
+            try? files.removeItem(at: root.appendingPathComponent(file))
+            throw error
+        }
         generateThumbnail(for: newRecord)
         return newRecord
     }
 
     func update(_ id: UUID, edits: PhotoEdits) {
         guard let i = photos.firstIndex(where: { $0.id == id }) else { return }
+        let previous = photos[i].edits
         photos[i].edits = edits
-        saveIndex()
+        do { try saveIndex() }
+        catch { photos[i].edits = previous; lastError = error.localizedDescription; return }
         generateThumbnail(for: photos[i])
     }
 
     func delete(_ id: UUID) {
         guard let record = record(id) else { return }
-        try? files.removeItem(at: sourceURL(for: record))
-        try? files.removeItem(at: thumbnailURL(for: record))
+        let previous = photos
         photos.removeAll { $0.id == id }
+        do { try saveIndex() }
+        catch { photos = previous; lastError = error.localizedDescription; return }
         thumbnailGeneration.removeValue(forKey: id)
-        saveIndex()
+        do {
+            try files.removeItem(at: sourceURL(for: record))
+            if files.fileExists(atPath: thumbnailURL(for: record).path) {
+                try files.removeItem(at: thumbnailURL(for: record))
+            }
+        } catch { lastError = "Photo removed from gallery, but file cleanup failed: \(error.localizedDescription)" }
     }
 
     func export(_ record: PhotoRecord, format: ExportFormat, completion: @escaping (Result<URL, Error>) -> Void) {
@@ -117,10 +143,10 @@ final class PhotoLibrary: ObservableObject {
         }
     }
 
-    private func saveIndex() {
-        guard let encoded = try? JSONEncoder().encode(photos) else { return }
-        do { try encoded.write(to: indexURL, options: .atomic) }
-        catch { lastError = "Couldn't save photo metadata: \(error.localizedDescription)" }
+    private func saveIndex() throws {
+        guard !metadataLoadFailed else { throw ImportError.libraryUnavailable }
+        let encoded = try JSONEncoder().encode(photos)
+        try encoded.write(to: indexURL, options: .atomic)
     }
 
     private func generateThumbnail(for record: PhotoRecord) {
@@ -144,7 +170,12 @@ final class PhotoLibrary: ObservableObject {
     }
 
     enum ImportError: LocalizedError {
-        case unsupported
-        var errorDescription: String? { "Supported formats: DNG, JPEG, HEIC, PNG and TIFF." }
+        case unsupported, libraryUnavailable
+        var errorDescription: String? {
+            switch self {
+            case .unsupported: return "Supported formats: DNG, JPEG, HEIC, PNG and TIFF."
+            case .libraryUnavailable: return "Library metadata could not be opened. Existing originals were preserved."
+            }
+        }
     }
 }

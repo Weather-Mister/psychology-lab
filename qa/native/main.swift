@@ -72,7 +72,7 @@ for aspect in CropAspect.allCases {
     var e=PhotoEdits.neutral;e.crop=aspect
     let im=render(ramp,e)
     let ratio=aspect.ratio ?? 4
-    check("crop \(aspect.rawValue)",abs(im.extent.width/im.extent.height-ratio)<0.001 && im.extent.minX==0 && im.extent.minY==0)
+    check("crop \(aspect.rawValue)",abs(im.extent.width/im.extent.height-ratio)<=1.0/im.extent.height && im.extent.minX==0 && im.extent.minY==0)
 }
 let resized=render(ramp,.neutral,100)
 check("preview bounded dimensions",resized.extent.width==100 && resized.extent.height==25)

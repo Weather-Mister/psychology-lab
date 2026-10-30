@@ -47,6 +47,9 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             | tee "$RUNNER_TEMP/xcodebuild.log"
 
+      - name: Simulator build and launch smoke test
+        run: bash qa/simulator_smoke.sh
+
       - name: Package unsigned IPA
         shell: bash
         run: |

@@ -38,18 +38,49 @@ final class CameraService: NSObject, ObservableObject {
     private var configured = false
     private var inFlight = false
     private var photoDelegate: PhotoCaptureDelegate?
+    private var wantsRunning = false // main-thread lifecycle intent
     var onCapture: ((Data, Bool) -> Void)?
+
+    override init() {
+        super.init()
+        NotificationCenter.default.addObserver(self, selector: #selector(sessionInterrupted), name: AVCaptureSession.wasInterruptedNotification, object: session)
+        NotificationCenter.default.addObserver(self, selector: #selector(interruptionEnded), name: AVCaptureSession.interruptionEndedNotification, object: session)
+        NotificationCenter.default.addObserver(self, selector: #selector(runtimeError(_:)), name: AVCaptureSession.runtimeErrorNotification, object: session)
+    }
+
+    deinit { NotificationCenter.default.removeObserver(self) }
+
+    @objc private func sessionInterrupted() {
+        DispatchQueue.main.async { self.isReady = false }
+    }
+
+    @objc private func interruptionEnded() {
+        DispatchQueue.main.async { if self.wantsRunning { self.configureAndStart() } }
+    }
+
+    @objc private func runtimeError(_ notification: Notification) {
+        let error = notification.userInfo?[AVCaptureSessionErrorKey] as? AVError
+        DispatchQueue.main.async {
+            self.isReady = false
+            if error?.code == .mediaServicesWereReset && self.wantsRunning {
+                self.configureAndStart()
+            } else {
+                self.errorMessage = error?.localizedDescription ?? "Camera session stopped. Reopen the camera to retry."
+            }
+        }
+    }
 
     func clearError() { errorMessage = nil }
 
     func requestAndStart() {
+        wantsRunning = true
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
             authorizationDenied = false
             configureAndStart()
         case .notDetermined:
             AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
-                if granted { DispatchQueue.main.async { self?.authorizationDenied = false; self?.configureAndStart() } }
+                if granted { DispatchQueue.main.async { self?.authorizationDenied = false; if self?.wantsRunning == true { self?.configureAndStart() } } }
                 else { DispatchQueue.main.async { self?.authorizationDenied = true } }
             }
         default: DispatchQueue.main.async { self.authorizationDenied = true }
@@ -93,6 +124,8 @@ final class CameraService: NSObject, ObservableObject {
     }
 
     func stop() {
+        wantsRunning = false
+        isReady = false
         sessionQueue.async { [weak self] in
             guard let self, self.session.isRunning else { return }
             self.session.stopRunning()

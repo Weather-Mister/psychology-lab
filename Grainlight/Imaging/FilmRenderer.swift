@@ -160,8 +160,8 @@ final class FilmRenderer: @unchecked Sendable {
             let originalRatio = bounds.width / bounds.height
             let cropWidth = originalRatio > targetRatio ? bounds.height * targetRatio : bounds.width
             let cropHeight = originalRatio > targetRatio ? bounds.height : bounds.width / targetRatio
-            let rectangle = CGRect(x: bounds.midX - cropWidth / 2, y: bounds.midY - cropHeight / 2,
-                                   width: cropWidth, height: cropHeight)
+            let rectangle = CGRect(x: floor(bounds.midX - cropWidth / 2), y: floor(bounds.midY - cropHeight / 2),
+                                   width: floor(cropWidth), height: floor(cropHeight))
             input = input.cropped(to: rectangle)
         }
         return input.transformed(by: CGAffineTransform(translationX: -input.extent.minX, y: -input.extent.minY))
