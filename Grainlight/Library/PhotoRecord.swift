@@ -28,7 +28,7 @@ struct PhotoEdits: Codable, Equatable {
     var warmth: Double = 0
     var tint: Double = 0
     var saturation: Double = 1
-    var grain: Double = 0.55
+    var grain: Double = 0.18
     var grainSize: Double = 1
     var forcePixelGrain: Bool = false
     var halation: Double = 0.38

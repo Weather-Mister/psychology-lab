@@ -227,6 +227,11 @@ final class FilmRenderer: @unchecked Sendable {
                     colors[0] = clamp(colors[0] + highlight * 0.10 - shadow * 0.18 + blueExcess * 0.35)
                     colors[1] = clamp(colors[1] + highlight * 0.065)
                     colors[2] = clamp(colors[2] + shadow * 0.06 - highlight * 0.065 - blueExcess * 0.50)
+                    // Bright blue sky approaches a luminous cream; dark blues are gated out.
+                    let skyMix = clamp(blueExcess * 8)
+                    let skyTone = 0.55 + 0.45 * filmic(y)
+                    let cream = [clamp(skyTone + 0.055), clamp(skyTone + 0.025), clamp(skyTone - 0.045)]
+                    colors = zip(colors, cream).map { $0 * (1 - skyMix) + $1 * skyMix }
                     floats.append(contentsOf: colors.map { Float($0) })
                     floats.append(1)
                 }
