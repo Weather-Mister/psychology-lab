@@ -1,0 +1,57 @@
+name: Initialize Grainlight and build IPA
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  bootstrap-and-build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore native iOS source
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xJf grainlight-transfer.tar.xz
+          test -f Grainlight.xcodeproj/project.pbxproj
+          test -f .github/workflows/build-ipa.yml
+          git rm -f grainlight-transfer.tar.xz .github/workflows/bootstrap.yml
+          python3 check_project.py
+          python3 qa/qa_camera.py
+          python3 qa/qa_gallery.py
+          python3 qa/qa_look.py
+          git config user.name 'grainlight-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m "Install Grainlight native iOS app and IPA workflows"
+          git push origin HEAD:main
+      - name: Build unsigned iPhone application
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild build -project Grainlight.xcodeproj -scheme Grainlight -configuration Release -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/DerivedData" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tee "$RUNNER_TEMP/xcodebuild.log"
+      - name: Package IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/Grainlight.app"
+          test -f "$APP/Info.plist"
+          mkdir -p "$RUNNER_TEMP/Payload"
+          ditto "$APP" "$RUNNER_TEMP/Payload/Grainlight.app"
+          (cd "$RUNNER_TEMP" && zip -q -r "$GITHUB_WORKSPACE/Grainlight-unsigned.ipa" Payload)
+          unzip -t Grainlight-unsigned.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Grainlight-unsigned-IPA
+          path: Grainlight-unsigned.ipa
+          retention-days: 30
+      - name: Build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: ${{ runner.temp }}/xcodebuild.log
+          if-no-files-found: ignore
