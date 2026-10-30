@@ -5,6 +5,7 @@ import SwiftUI
 final class CameraService: NSObject, ObservableObject {
     @Published private(set) var authorizationDenied = false
     @Published private(set) var isCapturing = false
+    @Published private(set) var isReady = false
     @Published private(set) var errorMessage: String?
     @Published private(set) var activeLens: Lens = .wide
     @Published private(set) var rawAvailable = false
@@ -13,7 +14,7 @@ final class CameraService: NSObject, ObservableObject {
     enum Lens: String, CaseIterable, Identifiable {
         case ultraWide = "0.5×"
         case wide = "1×"
-        case telephoto = "3×"
+        case telephoto = "Tele"
         var id: String { rawValue }
         var deviceType: AVCaptureDevice.DeviceType {
             switch self {
@@ -43,10 +44,12 @@ final class CameraService: NSObject, ObservableObject {
 
     func requestAndStart() {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
-        case .authorized: configureAndStart()
+        case .authorized:
+            authorizationDenied = false
+            configureAndStart()
         case .notDetermined:
             AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
-                if granted { self?.configureAndStart() }
+                if granted { DispatchQueue.main.async { self?.authorizationDenied = false; self?.configureAndStart() } }
                 else { DispatchQueue.main.async { self?.authorizationDenied = true } }
             }
         default: DispatchQueue.main.async { self.authorizationDenied = true }
@@ -84,6 +87,8 @@ final class CameraService: NSObject, ObservableObject {
                 self.updateRawAvailability()
             }
             if !self.session.isRunning { self.session.startRunning() }
+            let running = self.session.isRunning
+            DispatchQueue.main.async { self.isReady = running }
         }
     }
 
@@ -91,12 +96,13 @@ final class CameraService: NSObject, ObservableObject {
         sessionQueue.async { [weak self] in
             guard let self, self.session.isRunning else { return }
             self.session.stopRunning()
+            DispatchQueue.main.async { self.isReady = false }
         }
     }
 
     func selectLens(_ lens: Lens) {
         sessionQueue.async { [weak self] in
-            guard let self, let camera = Self.camera(for: lens),
+            guard let self, self.configured, !self.inFlight, let camera = Self.camera(for: lens),
                   let newInput = try? AVCaptureDeviceInput(device: camera) else { return }
             self.session.beginConfiguration()
             if let old = self.activeInput { self.session.removeInput(old) }
@@ -107,7 +113,8 @@ final class CameraService: NSObject, ObservableObject {
             } else if let old = self.activeInput {
                 self.session.addInput(old)
             }
-            self.configureBestResolution(for: camera)
+            if let actual = self.activeInput?.device { self.configureBestResolution(for: actual) }
+            if self.photoOutput.isAppleProRAWSupported { self.photoOutput.isAppleProRAWEnabled = true }
             self.session.commitConfiguration()
             self.updateRawAvailability()
         }
@@ -126,11 +133,11 @@ final class CameraService: NSObject, ObservableObject {
             do {
                 try device.lockForConfiguration()
                 defer { device.unlockForConfiguration() }
-                if device.isFocusPointOfInterestSupported {
+                if device.isFocusPointOfInterestSupported && device.isFocusModeSupported(.autoFocus) {
                     device.focusPointOfInterest = point
                     device.focusMode = .autoFocus
                 }
-                if device.isExposurePointOfInterestSupported {
+                if device.isExposurePointOfInterestSupported && device.isExposureModeSupported(.autoExpose) {
                     device.exposurePointOfInterest = point
                     device.exposureMode = .autoExpose
                 }
@@ -140,7 +147,9 @@ final class CameraService: NSObject, ObservableObject {
 
     func capture() {
         sessionQueue.async { [weak self] in
-            guard let self, self.configured, !self.inFlight else { return }
+            guard let self, self.configured, self.session.isRunning, !self.session.isInterrupted, !self.inFlight,
+                  let connection = self.photoOutput.connection(with: .video), connection.isActive else { return }
+            if connection.isVideoRotationAngleSupported(90) { connection.videoRotationAngle = 90 }
             self.inFlight = true
             let bayer = self.photoOutput.availableRawPhotoPixelFormatTypes.first {
                 AVCapturePhotoOutput.isBayerRAWPixelFormat($0)
@@ -154,16 +163,20 @@ final class CameraService: NSObject, ObservableObject {
             }
             settings.photoQualityPrioritization = .quality
             settings.maxPhotoDimensions = self.photoOutput.maxPhotoDimensions
-            if self.photoOutput.isFlashScene { settings.flashMode = .off }
+            // Never request an unsupported flash mode.
+            if self.photoOutput.supportedFlashModes.contains(.off) { settings.flashMode = .off }
             DispatchQueue.main.async { self.isCapturing = true }
             let delegate = PhotoCaptureDelegate { [weak self] data, raw, error in
                 guard let self else { return }
-                self.sessionQueue.async { self.inFlight = false }
-                DispatchQueue.main.async {
-                    self.isCapturing = false
+                self.sessionQueue.async {
+                    self.inFlight = false
                     self.photoDelegate = nil
-                    if let error { self.errorMessage = error.localizedDescription }
-                    else if let data { self.onCapture?(data, raw) }
+                    DispatchQueue.main.async {
+                        self.isCapturing = false
+                        if let error { self.errorMessage = error.localizedDescription }
+                        else if let data { self.onCapture?(data, raw) }
+                        else { self.errorMessage = "The camera returned no image. Please try again." }
+                    }
                 }
             }
             self.photoDelegate = delegate

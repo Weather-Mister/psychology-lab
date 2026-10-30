@@ -157,6 +157,7 @@ struct MainView: View {
             }
         }
         .frame(height: 42)
+        .disabled(camera.isCapturing || !camera.isReady)
     }
 
     private var cameraControls: some View {
@@ -185,8 +186,8 @@ struct MainView: View {
                     if camera.isCapturing { ProgressView().tint(.black) }
                 }
             }
-            .disabled(camera.isCapturing || camera.authorizationDenied)
-            .accessibilityLabel("Take a RAW photograph")
+            .disabled(camera.isCapturing || camera.authorizationDenied || !camera.isReady)
+            .accessibilityLabel(camera.rawAvailable ? "Take a RAW photograph" : "Take a photograph")
             Spacer()
             Button { showImport = true } label: {
                 Image(systemName: "square.and.arrow.down")

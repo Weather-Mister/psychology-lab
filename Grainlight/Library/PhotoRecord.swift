@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 
 enum CropAspect: String, Codable, CaseIterable, Identifiable {
     case original = "Original"

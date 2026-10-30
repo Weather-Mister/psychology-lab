@@ -13,7 +13,7 @@
   <key>CFBundleIconName</key><string>AppIcon</string>
   <key>NSCameraUsageDescription</key><string>Grainlight uses your camera to capture RAW photographs.</string>
   <key>NSPhotoLibraryAddUsageDescription</key><string>Grainlight saves your developed photographs to the Photos library when you choose to export them.</string>
-  <key>UIRequiresFullScreen</key><false/>
+  <key>UIRequiresFullScreen</key><true/>
   <key>UIStatusBarStyle</key><string>UIStatusBarStyleLightContent</string>
   <key>UISupportedInterfaceOrientations</key>
   <array><string>UIInterfaceOrientationPortrait</string></array>

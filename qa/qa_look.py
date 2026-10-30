@@ -7,7 +7,7 @@ assert '1.06 - 0.11 * v' in s
 assert 'CIRAWFilter(imageURL:' in s
 assert 'CIColorCube' in s
 assert 'CIGaussianBlur' in s
-assert 'CIRandomGenerator' in s
+assert 'grainKernel' in s
 clamp=lambda x:min(1,max(0,x))
 def curve(x):
  v=clamp(x)

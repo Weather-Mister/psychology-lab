@@ -100,6 +100,7 @@ final class PhotoLibrary: ObservableObject {
             case .success(let url):
                 PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
                     guard status == .authorized || status == .limited else {
+                        try? FileManager.default.removeItem(at: url)
                         DispatchQueue.main.async { self?.lastError = "Photo Library access was denied." }
                         return
                     }

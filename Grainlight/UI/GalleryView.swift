@@ -189,6 +189,7 @@ struct PhotoViewer: View {
             DispatchQueue.main.async {
                 guard developmentID == requestID else { return }
                 image = preview
+                if preview == nil { exportError = "Could not decode this image. The original is preserved." }
             }
         }
     }
@@ -213,7 +214,13 @@ struct ShareFile: Identifiable {
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        controller.completionWithItemsHandler = { _, _, _, _ in
+            for case let url as URL in items where url.deletingLastPathComponent() == FileManager.default.temporaryDirectory.standardizedFileURL {
+                try? FileManager.default.removeItem(at: url)
+            }
+        }
+        return controller
     }
     func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }

@@ -31,6 +31,9 @@ jobs:
           python3 qa/qa_gallery.py
           python3 qa/qa_look.py
 
+      - name: Execute production renderer on controlled images
+        run: bash qa/run_native.sh
+
       - name: iOS device build (without signing)
         run: |
           set -o pipefail
@@ -62,6 +65,14 @@ jobs:
           path: Grainlight-unsigned.ipa
           retention-days: 30
           if-no-files-found: error
+
+      - name: Save controlled rendering evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Grainlight-QA-evidence
+          path: ${{ runner.temp }}/grainlight-qa
+          retention-days: 30
 
       - name: Save Xcode build diagnostics on failure
         if: failure()

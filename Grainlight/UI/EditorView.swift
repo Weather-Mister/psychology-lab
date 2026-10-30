@@ -117,7 +117,7 @@ struct EditorView: View {
                     Button("Reset") { edits = .signature }
                         .font(.system(size: 12, weight: .medium))
                     Spacer()
-                    Text("ORIGINAL RAW FILE PRESERVED")
+                    Text("ORIGINAL FILE PRESERVED")
                         .font(.system(size: 9, weight: .medium, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.45))
                 }
@@ -199,6 +199,7 @@ struct EditorView: View {
             guard !Task.isCancelled, previewGeneration == generation else { return }
             preview = updated
             isDeveloping = false
+            if updated == nil { library.lastError = "Could not develop this image. The original is preserved." }
         }
     }
 }
