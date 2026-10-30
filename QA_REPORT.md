@@ -1,5 +1,21 @@
 # Grainlight QA audit — 30 October 2026
 
+## Reference-style update (latest)
+
+The user supplied three screenshots after the first audit and requested closer photographic style. The signature was retuned toward their visible characteristics: deeper cool shadows, creamy bright neutrals, and reduced bright-blue saturation, with luminance gating to preserve blue architecture. Neutral mode still bypasses the creative transform. The earlier audit's low highlight-color-spread measurement below describes its tested revision, not the new artistic target; creamy signature highlights are deliberately warm.
+
+The native harness now develops the cropped city “before” screenshot and places the unmodified target crop beside the result. Crops exclude the social interface. These are already processed JPEG screenshots, differently framed and potentially differently exposed—not a common sensor RAW pair. The sunset, airport, Chicago and night examples have no before frames. No photographic-equivalence or whole-scene pixel-error claim is made.
+
+The new signature has passed all 34 native runtime assertions. The screenshot probe has different exposure/framing and baked processing; a style adjustment cannot establish RAW equivalence. The new warmth is intentionally confined to signature mode; neutral-mode color preservation remains tested.
+
+The latest refinement also reduces default grain from 0.55 to 0.18 for new photographs/reset edits and lifts luminous blue skies toward cream, leaving dark blues outside that adjustment. Existing saved edit values remain preserved. A near-neutral exclusion prevents the sky transform from introducing tone reversals through LUT interpolation. The unchanged monotonic-ramp test caught that regression before release, and the repaired renderer passes all 34 native checks.
+
+A repository tree construction error in intermediate commits temporarily omitted unrelated project files. It was detected by CI and repaired from the full preceding tree in commit `fabb00b`; the final project retains all original application, project, QA and workflow files. The psychology backup branch was never modified.
+
+Final color-managed style check: [run 41075842071](https://github.com/Weather-Mister/psychology-lab/actions/runs/41075842071), source `87b933f3ed44c16cac892ac3b781e72f403ffeae`, 34/34 native runtime assertions passed. Actual output was visually inspected beside the screenshot source and target. The sky is creamier and grain is subtler; shadows remain lighter than the target, so this is a closer style approximation, not a match. The target crop uses tagged sRGB reconstructed from `target-srgb.b64`; it is not processed through Grainlight.
+
+These reference results supersede the initial audit's creative-look measurements. That audit's neutral-mode tests and engineering findings remain relevant. Final IPA build: [run 41075842053](https://github.com/Weather-Mister/psychology-lab/actions/runs/41075842053), source `87b933f3ed44c16cac892ac3b781e72f403ffeae`. All 34 native assertions, static checks, baseline comparison, iOS device compilation and simulator install/launch smoke check passed. Final job logs inspected; both builds succeeded and simulator PID 16306 was observed alive. IPA ZIP CRC and ARM64 Mach-O packaging inspected. Size 335,759 bytes; SHA-256 `9b187066483a58986d1512c7da0593f62e582a20feb7dfca2b6d5925f5e3639f`. Unsigned; physical capture remains unverified. Download artifacts [IPA](https://github.com/Weather-Mister/psychology-lab/actions/runs/41075842053/artifacts/12986788622) and [evidence](https://github.com/Weather-Mister/psychology-lab/actions/runs/41075842053/artifacts/12986628802).
+
 ## Scope and release meaning
 
 Reviewed every application Swift file and the Xcode project, permissions, build workflows, and existing QA scripts. Starting revision: `c261056ff5063b828a2c015320a63119d191315b`. Its Actions run [41063611894](https://github.com/Weather-Mister/psychology-lab/actions/runs/41063611894) succeeded using Xcode 16.4, but only performed static Python checks and a device-target compile; it did not run renderer tests or launch a simulator.
