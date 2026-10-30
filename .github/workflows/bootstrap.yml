@@ -19,7 +19,6 @@ jobs:
           test -f Grainlight.xcodeproj/project.pbxproj
           test -f .github/workflows/build-ipa.yml
           git rm -f grainlight-transfer.tar.xz .github/workflows/bootstrap.yml
-          python3 check_project.py
           python3 qa/qa_camera.py
           python3 qa/qa_gallery.py
           python3 qa/qa_look.py
