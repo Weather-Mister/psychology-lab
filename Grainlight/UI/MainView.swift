@@ -78,7 +78,7 @@ struct MainView: View {
                 Text("G R A I N L I G H T")
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .tracking(1.4)
-                Text(camera.rawAvailable ? "RAW  ·  STILL CAMERA" : "STANDARD  ·  STILL CAMERA")
+                Text("\(camera.captureFormatLabel)  ·  STILL CAMERA")
                     .font(.system(size: 9, weight: .medium))
                     .foregroundStyle(.white.opacity(0.5))
                     .tracking(1.3)

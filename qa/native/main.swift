@@ -132,6 +132,16 @@ for (name,edits) in [("reference-neutral",PhotoEdits.neutral),("reference-signat
     else { check("reference probe decode",false) }
 }
 try FileManager.default.copyItem(at:URL(fileURLWithPath:FileManager.default.currentDirectoryPath).appendingPathComponent("qa/reference/target.jpg"),to:output.appendingPathComponent("reference-target.jpg"))
+// Guard the reference-density change without relying on a screenshot's exposure.
+let gray18=fixture(64,64){_,_ in [0.18,0.18,0.18,1]}
+let dense=pixels(render(gray18,look))
+check("signature shadow density",dense[0]<0.09 && dense[0]>0.01,"18 percent gray red \(dense[0])")
+let coolBlue=fixture(64,64){_,_ in [0.08,0.15,0.28,1]}
+let blue=pixels(render(coolBlue,look))
+check("dark blue remains blue",blue[2]>blue[0] && blue[2]>blue[1])
+let nearBlack=fixture(64,64){_,_ in [0.015,0.015,0.015,1]}
+let shadowDetail=pixels(render(nearBlack,look))
+check("near-black detail preserved",shadowDetail[1]>0 && shadowDetail[1]<dense[1])
 let editsData=try JSONEncoder().encode(PhotoEdits.signature)
 check("edits persistence roundtrip",try JSONDecoder().decode(PhotoEdits.self,from:editsData)==PhotoEdits.signature)
 try JSONSerialization.data(withJSONObject:results,options:[.prettyPrinted,.sortedKeys]).write(to:output.appendingPathComponent("results.json"))

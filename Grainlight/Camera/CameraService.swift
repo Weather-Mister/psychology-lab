@@ -9,6 +9,7 @@ final class CameraService: NSObject, ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var activeLens: Lens = .wide
     @Published private(set) var rawAvailable = false
+    @Published private(set) var captureFormatLabel = "CHECKING CAMERA"
     @Published private(set) var availableLenses: [Lens] = [.wide]
 
     enum Lens: String, CaseIterable, Identifiable {
@@ -218,8 +219,15 @@ final class CameraService: NSObject, ObservableObject {
     }
 
     private func updateRawAvailability() {
-        let supportsRAW = !photoOutput.availableRawPhotoPixelFormatTypes.isEmpty
-        DispatchQueue.main.async { self.rawAvailable = supportsRAW }
+        let formats = photoOutput.availableRawPhotoPixelFormatTypes
+        let hasBayer = formats.contains { AVCapturePhotoOutput.isBayerRAWPixelFormat($0) }
+        let label = hasBayer ? "BAYER RAW" : (formats.isEmpty ? "JPEG" : "RAW")
+        // Remaining available RAW formats on supported iPhones are Apple ProRAW.
+        let hasProRAW = formats.contains { AVCapturePhotoOutput.isAppleProRAWPixelFormat($0) }
+        DispatchQueue.main.async {
+            self.rawAvailable = !formats.isEmpty
+            self.captureFormatLabel = hasBayer ? label : (hasProRAW ? "APPLE PRORAW" : label)
+        }
     }
 
     private func report(_ message: String) {
