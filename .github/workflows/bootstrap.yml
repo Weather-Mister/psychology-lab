@@ -2,6 +2,9 @@ name: Initialize Grainlight and build IPA
 on:
   push:
     branches: [main]
+    paths:
+      - grainlight-transfer.tar.xz
+      - .github/workflows/bootstrap.yml
   workflow_dispatch:
 permissions:
   contents: write
@@ -18,7 +21,9 @@ jobs:
           tar -xJf grainlight-transfer.tar.xz
           test -f Grainlight.xcodeproj/project.pbxproj
           test -f .github/workflows/build-ipa.yml
-          git rm -f grainlight-transfer.tar.xz .github/workflows/bootstrap.yml
+          mv .github/workflows/build-ipa.yml build-ipa-template.yml
+          mv .github/workflows/build-signed-ipa.yml build-signed-ipa-template.yml
+          git rm -f grainlight-transfer.tar.xz
           python3 qa/qa_camera.py
           python3 qa/qa_gallery.py
           python3 qa/qa_look.py
