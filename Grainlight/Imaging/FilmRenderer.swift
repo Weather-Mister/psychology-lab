@@ -221,7 +221,7 @@ final class FilmRenderer: @unchecked Sendable {
                     let shadow = pow(1 - y, 2) * y
                     let highlight = pow(y, 1.3)
                     let skyWeight = pow(clamp((y - 0.40) / 0.40), 2)
-                    let blueExcess = max(0, rgb[2] - rgb[0]) * skyWeight
+                    let blueExcess = max(0, rgb[2] - rgb[0] - 0.04) * skyWeight
                     // Warmer pale highlights and blue/green lowlights. Sky blue
                     // shifts toward ivory without stamping a uniform sepia filter.
                     colors[0] = clamp(colors[0] + highlight * 0.10 - shadow * 0.18 + blueExcess * 0.35)
