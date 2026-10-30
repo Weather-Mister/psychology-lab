@@ -14,7 +14,7 @@ Independent open-source cinematic RAW photography app. This is an original proje
 - iOS 17+; SwiftUI
 
 ## Status
-This app is compiled automatically on a GitHub-hosted macOS runner; physical-device RAW capture and exact Chromagraph image fidelity have not been validated. Refer to `QA_REPORT.md` for known test limitations.
+The audited build passed 34 native renderer assertions, iOS device and simulator compilation, and a simulator install/launch smoke check on hosted macOS. Camera, persistence and rendering defects were repaired; controlled images are compared against the original renderer. Physical-device capture and competitor photographic equivalence remain unverified. See [the detailed audit](QA_REPORT.md) and [successful build with IPA and evidence](https://github.com/Weather-Mister/psychology-lab/actions/runs/41066773710).
 
 ## Repository safety
 Your former psychology project is preserved in [backup-psychology-before-grainlight-2026-10-30](https://github.com/Weather-Mister/psychology-lab/tree/backup-psychology-before-grainlight-2026-10-30).
