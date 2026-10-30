@@ -4,7 +4,7 @@ from pathlib import Path
 import sys
 out=Path(sys.argv[1]);out.mkdir(parents=True,exist_ok=True)
 def make(orientation):
-    width,height=128,96
+    width,height=640,480
     tags=[]
     def tag(n,t,values):
         formats={1:'B',3:'H',4:'I',5:'I',10:'i'}
@@ -17,6 +17,7 @@ def make(orientation):
     tag(271,2,'Grainlight');tag(272,2,'Synthetic Bayer');tag(273,4,[0]);tag(274,3,[orientation]);tag(277,3,[1]);tag(278,4,[height]);tag(279,4,[width*height*2]);tag(284,3,[1])
     tag(33421,3,[2,2]);tag(33422,1,[0,1,1,2]);tag(50706,1,[1,4,0,0]);tag(50707,1,[1,1,0,0]);tag(50708,2,'Grainlight Synthetic Bayer')
     tag(50710,1,[0,1,2]);tag(50711,3,[1]);tag(50713,3,[1,1]);tag(50714,5,[0,1]);tag(50717,4,[65535])
+    tag(50718,5,[1,1,1,1]);tag(50719,4,[0,0]);tag(50720,4,[width,height]);tag(50829,4,[0,0,height,width])
     tag(50721,10,[1,1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,1,1]);tag(50728,5,[1,1,1,1,1,1]);tag(50778,3,[21])
     tags.sort();start=8+2+12*len(tags)+4
     extra=bytearray();entries=[]

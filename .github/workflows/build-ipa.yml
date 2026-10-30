@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Show installed Xcode
         run: xcodebuild -version
@@ -33,6 +35,9 @@ jobs:
 
       - name: Execute production renderer on controlled images
         run: bash qa/run_native.sh
+
+      - name: Reproduce baseline rendering for comparison
+        run: bash qa/run_baseline.sh
 
       - name: iOS device build (without signing)
         run: |

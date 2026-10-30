@@ -118,8 +118,8 @@ for orientation in [1,6] {
     let rawData=try Data(contentsOf:rawURL)
     if let raw=renderer.process(url:rawURL,edits:.neutral,maxDimension:nil) {
         check("synthetic Bayer DNG decode o\(orientation)",true)
-        let width:CGFloat = orientation==1 ? 128:96
-        let height:CGFloat = orientation==1 ? 96:128
+        let width:CGFloat = orientation==1 ? 640:480
+        let height:CGFloat = orientation==1 ? 480:640
         check("DNG orientation o\(orientation)",raw.extent.width==width && raw.extent.height==height,"extent \(raw.extent)")
         try write(raw,"synthetic-raw-developed-o\(orientation)")
         check("RAW source preserved o\(orientation)",try Data(contentsOf:rawURL)==rawData)
