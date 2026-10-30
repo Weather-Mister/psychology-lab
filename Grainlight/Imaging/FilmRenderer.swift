@@ -115,6 +115,9 @@ final class FilmRenderer: @unchecked Sendable {
                 "inputCubeDimension": 33,
                 "inputCubeData": lookCube
             ])
+            // Apply density after LUT interpolation so neutral ramps cannot inherit cross-cell reversals.
+            guard let dense = Self.densityKernel?.apply(extent: extent, arguments: [input]) else { return nil }
+            input = dense
         }
 
         // A subtle warm/cool split with magenta/green tint control.
@@ -167,6 +170,13 @@ final class FilmRenderer: @unchecked Sendable {
         return input.transformed(by: CGAffineTransform(translationX: -input.extent.minX, y: -input.extent.minY))
     }
 
+    private static let densityKernel = CIColorKernel(source: """
+        kernel vec4 density(__sample p) {
+            float y = dot(p.rgb, vec3(0.2126, 0.7152, 0.0722));
+            float scale = 0.56 + 0.44 * smoothstep(0.10, 0.65, y);
+            return vec4(p.rgb * scale, p.a);
+        }
+        """)
     private static let shoulderKernel = CIColorKernel(source: """
         kernel vec4 shoulder(__sample p) {
             vec3 c = max(p.rgb, vec3(0.0));
@@ -232,10 +242,6 @@ final class FilmRenderer: @unchecked Sendable {
                     let skyTone = 0.55 + 0.45 * filmic(y)
                     let cream = [clamp(skyTone + 0.055), clamp(skyTone + 0.025), clamp(skyTone - 0.045)]
                     colors = zip(colors, cream).map { $0 * (1 - skyMix) + $1 * skyMix }
-                    // Reference density: deepen shadows/lower midtones, retain the highlight shoulder.
-                    let position = clamp((y - 0.18) / 0.54)
-                    let density = 0.56 + 0.44 * position * position * (3 - 2 * position)
-                    colors = colors.map { $0 * density }
                     floats.append(contentsOf: colors.map { Float($0) })
                     floats.append(1)
                 }

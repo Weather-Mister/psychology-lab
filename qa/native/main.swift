@@ -42,7 +42,8 @@ var look = PhotoEdits.neutral; look.useLook = true
 let developed = render(ramp,look)
 try write(ramp,"ramp-input"); try write(developed,"ramp-signature-tone")
 let tone = pixels(developed)
-check("look ramp monotonic", (1..<512).allSatisfy{ tone[$0*4] >= tone[($0-1)*4]-0.0001 })
+let minimumToneStep=(1..<512).map{tone[$0*4]-tone[($0-1)*4]}.min()!
+check("look ramp monotonic",minimumToneStep >= -0.0001,"minimum step \(minimumToneStep)")
 check("look black stays black", tone[0...2].allSatisfy{abs($0)<0.005})
 let white = Array(tone[(511*4)..<(511*4+3)])
 check("signature creamy highlight bounds", white.max()!-white.min()! > 0.04 && white.max()!-white.min()! < 0.20, "white RGB \(white)")
