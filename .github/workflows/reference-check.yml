@@ -1,0 +1,20 @@
+name: Reference rendering check
+on:
+  push:
+    branches: [main]
+    paths: ['qa/reference/**', 'Grainlight/Imaging/**', 'Grainlight/Library/PhotoRecord.swift', '.github/workflows/reference-check.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reference:
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash qa/run_native.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Reference-color-managed-evidence
+          path: ${{ runner.temp }}/grainlight-qa
