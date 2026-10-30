@@ -92,6 +92,39 @@ do {
     try FileManager.default.copyItem(at:heic,to:output.appendingPathComponent("neutral-export.heic"))
     try FileManager.default.removeItem(at:heic)
 } catch { check("HEIC export",false,error.localizedDescription) }
+// Digital RGB swatches validate color management, not a camera's spectral accuracy.
+let swatches = fixture(256,64) { x,_ in
+    let colors: [[Float]] = [[0.72,0.47,0.34,1],[0.27,0.39,0.64,1],[0.19,0.48,0.25,1],[0.8,0.12,0.09,1]]
+    return colors[x/64]
+}
+let swatchPixels=pixels(render(swatches,.neutral)), expected=pixels(swatches)
+let colorError=zip(swatchPixels,expected).map{abs($0-$1)}.max()!
+check("neutral digital swatch accuracy",colorError<0.015,"max RGB error \(colorError)")
+try write(swatches,"color-input"); try write(render(swatches,.signature),"color-signature")
+var shadowEdits=PhotoEdits.neutral;shadowEdits.shadows=1
+let shadowResult=pixels(render(ramp,shadowEdits))
+check("shadow lift responds",shadowResult[40*4]>after[40*4])
+var exposureEdits=PhotoEdits.neutral;exposureEdits.exposure=1
+check("positive exposure responds",pixels(render(ramp,exposureEdits))[128*4]>after[128*4])
+let cg=context.createCGImage(swatches,from:swatches.extent)!
+let rotatedURL=output.appendingPathComponent("orientation-6.jpg")
+let dest=CGImageDestinationCreateWithURL(rotatedURL as CFURL,UTType.jpeg.identifier as CFString,1,nil)!
+CGImageDestinationAddImage(dest,cg,[kCGImagePropertyOrientation:6] as CFDictionary)
+check("orientation fixture encoded",CGImageDestinationFinalize(dest))
+let rotated=renderer.process(url:rotatedURL,edits:.neutral,maxDimension:nil)
+check("JPEG EXIF orientation applied once",rotated?.extent.width==64 && rotated?.extent.height==256)
+for orientation in [1,6] {
+    let rawURL=output.appendingPathComponent("synthetic-bayer-o\(orientation).dng")
+    let rawData=try Data(contentsOf:rawURL)
+    if let raw=renderer.process(url:rawURL,edits:.neutral,maxDimension:nil) {
+        check("synthetic Bayer DNG decode o\(orientation)",true)
+        let width:CGFloat = orientation==1 ? 128:96
+        let height:CGFloat = orientation==1 ? 96:128
+        check("DNG orientation o\(orientation)",raw.extent.width==width && raw.extent.height==height,"extent \(raw.extent)")
+        try write(raw,"synthetic-raw-developed-o\(orientation)")
+        check("RAW source preserved o\(orientation)",try Data(contentsOf:rawURL)==rawData)
+    } else { check("synthetic Bayer DNG decode o\(orientation)",false,"Core Image rejected synthetic fixture") }
+}
 let editsData=try JSONEncoder().encode(PhotoEdits.signature)
 check("edits persistence roundtrip",try JSONDecoder().decode(PhotoEdits.self,from:editsData)==PhotoEdits.signature)
 try JSONSerialization.data(withJSONObject:results,options:[.prettyPrinted,.sortedKeys]).write(to:output.appendingPathComponent("results.json"))
