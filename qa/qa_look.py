@@ -2,8 +2,8 @@
 from pathlib import Path
 import math
 s=(Path(__file__).resolve().parents[1]/'Grainlight/Imaging/FilmRenderer.swift').read_text()
-assert 'pow(v, 1.28)' in s
-assert '1.06 - 0.11 * v' in s
+assert 'pow(v, 1.50)' in s
+assert '1.30 - 0.30 * v' in s
 assert 'CIRAWFilter(imageURL:' in s
 assert 'CIColorCube' in s
 assert 'CIGaussianBlur' in s
@@ -11,7 +11,7 @@ assert 'grainKernel' in s
 clamp=lambda x:min(1,max(0,x))
 def curve(x):
  v=clamp(x)
- return clamp((v**1.28)*(1.06-.11*v))
+ return clamp((v**1.50)*(1.30-.30*v))
 xs=[i/1000 for i in range(1001)]
 ys=[curve(x) for x in xs]
 assert all(math.isfinite(y) and 0<=y<=1 for y in ys)

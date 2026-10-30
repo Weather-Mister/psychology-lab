@@ -209,7 +209,7 @@ final class FilmRenderer: @unchecked Sendable {
             // Restrained shadows and low-key midtones with a soft highlight shoulder.
             // An original approximation, calibrated by visual comparison only.
             let v = clamp(x)
-            return clamp(pow(v, 1.28) * (1.06 - 0.11 * v))
+            return clamp(pow(v, 1.50) * (1.30 - 0.30 * v))
         }
         for b in 0..<size {
             for g in 0..<size {
@@ -219,13 +219,14 @@ final class FilmRenderer: @unchecked Sendable {
                     let chroma = 0.78 + 0.07 * (1 - y)
                     var colors = rgb.map { filmic(y + ($0 - y) * chroma) }
                     let shadow = pow(1 - y, 2) * y
-                    let highlight = pow(y, 1.3) * (1 - y)
-                    let blueExcess = max(0, rgb[2] - rgb[0]) * highlight
+                    let highlight = pow(y, 1.3)
+                    let skyWeight = pow(clamp((y - 0.40) / 0.40), 2)
+                    let blueExcess = max(0, rgb[2] - rgb[0]) * skyWeight
                     // Warmer pale highlights and blue/green lowlights. Sky blue
                     // shifts toward ivory without stamping a uniform sepia filter.
-                    colors[0] = clamp(colors[0] + highlight * 0.04 + blueExcess * 0.02)
-                    colors[1] = clamp(colors[1] + highlight * 0.01)
-                    colors[2] = clamp(colors[2] + shadow * 0.012 - highlight * 0.025 - blueExcess * 0.02)
+                    colors[0] = clamp(colors[0] + highlight * 0.10 - shadow * 0.18 + blueExcess * 0.35)
+                    colors[1] = clamp(colors[1] + highlight * 0.065)
+                    colors[2] = clamp(colors[2] + shadow * 0.06 - highlight * 0.065 - blueExcess * 0.50)
                     floats.append(contentsOf: colors.map { Float($0) })
                     floats.append(1)
                 }

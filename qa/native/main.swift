@@ -45,7 +45,7 @@ let tone = pixels(developed)
 check("look ramp monotonic", (1..<512).allSatisfy{ tone[$0*4] >= tone[($0-1)*4]-0.0001 })
 check("look black stays black", tone[0...2].allSatisfy{abs($0)<0.005})
 let white = Array(tone[(511*4)..<(511*4+3)])
-check("highlight neutral balance", white.max()!-white.min()! < 0.025, "white RGB \(white)")
+check("signature creamy highlight bounds", white.max()!-white.min()! > 0.04 && white.max()!-white.min()! < 0.20, "white RGB \(white)")
 let hdr = fixture(256,32) { x,_ in let v=0.5+Float(x)/255*3.5;return [v,v,v,1] }
 let hdrOut = pixels(render(hdr,look))
 check("over-range highlight separation", hdrOut[100*4] > hdrOut[40*4]+0.005, "1.05 and 1.87 input remain distinct")
@@ -125,6 +125,13 @@ for orientation in [1,6] {
         check("RAW source preserved o\(orientation)",try Data(contentsOf:rawURL)==rawData)
     } else { check("synthetic Bayer DNG decode o\(orientation)",false,"Core Image rejected synthetic fixture") }
 }
+// Screenshot-derived style probe: processed JPEG input, not an original RAW pair.
+let referenceURL=URL(fileURLWithPath:FileManager.default.currentDirectoryPath).appendingPathComponent("qa/reference/input.jpg")
+for (name,edits) in [("reference-neutral",PhotoEdits.neutral),("reference-signature",PhotoEdits.signature)] {
+    if let image=renderer.process(url:referenceURL,edits:edits,maxDimension:nil) { try write(image,name) }
+    else { check("reference probe decode",false) }
+}
+try FileManager.default.copyItem(at:URL(fileURLWithPath:FileManager.default.currentDirectoryPath).appendingPathComponent("qa/reference/target.jpg"),to:output.appendingPathComponent("reference-target.jpg"))
 let editsData=try JSONEncoder().encode(PhotoEdits.signature)
 check("edits persistence roundtrip",try JSONDecoder().decode(PhotoEdits.self,from:editsData)==PhotoEdits.signature)
 try JSONSerialization.data(withJSONObject:results,options:[.prettyPrinted,.sortedKeys]).write(to:output.appendingPathComponent("results.json"))
