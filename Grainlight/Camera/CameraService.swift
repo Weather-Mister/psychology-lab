@@ -17,11 +17,17 @@ final class CameraService: NSObject, ObservableObject {
         var id: String { rawValue }
         var deviceType: AVCaptureDevice.DeviceType {
             switch self {
-            case .ultraWide: return .builtInUltraWideAngleCamera
+            case .ultraWide: return .builtInUltraWideCamera
             case .wide: return .builtInWideAngleCamera
             case .telephoto: return .builtInTelephotoCamera
             }
         }
+    }
+
+    private static func camera(for lens: Lens) -> AVCaptureDevice? {
+        AVCaptureDevice.DiscoverySession(
+            deviceTypes: [lens.deviceType], mediaType: .video, position: .back
+        ).devices.first
     }
 
     let session = AVCaptureSession()
@@ -54,10 +60,10 @@ final class CameraService: NSObject, ObservableObject {
                 self.session.beginConfiguration()
                 self.session.sessionPreset = .photo
                 let discovered = Lens.allCases.filter {
-                    AVCaptureDevice.default($0.deviceType, for: .video, position: .back) != nil
+                    Self.camera(for: $0) != nil
                 }
                 DispatchQueue.main.async { self.availableLenses = discovered }
-                guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+                guard let device = Self.camera(for: .wide),
                       let input = try? AVCaptureDeviceInput(device: device),
                       self.session.canAddInput(input), self.session.canAddOutput(self.photoOutput) else {
                     self.session.commitConfiguration()
@@ -90,7 +96,7 @@ final class CameraService: NSObject, ObservableObject {
 
     func selectLens(_ lens: Lens) {
         sessionQueue.async { [weak self] in
-            guard let self, let camera = AVCaptureDevice.default(lens.deviceType, for: .video, position: .back),
+            guard let self, let camera = Self.camera(for: lens),
                   let newInput = try? AVCaptureDeviceInput(device: camera) else { return }
             self.session.beginConfiguration()
             if let old = self.activeInput { self.session.removeInput(old) }

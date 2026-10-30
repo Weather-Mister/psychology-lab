@@ -32,7 +32,7 @@ final class FilmRenderer {
         }
         let output = FileManager.default.temporaryDirectory
             .appendingPathComponent("Grainlight-\(UUID().uuidString).\(format.fileExtension)")
-        let options: [CIImageRepresentationOption: Any] = [.lossyCompressionQuality: quality]
+        let options: [CIImageRepresentationOption: Any] = [CIImageRepresentationOption(rawValue: kCGImageDestinationLossyCompressionQuality as String): quality]
         let data: Data?
         switch format {
         case .jpeg:
