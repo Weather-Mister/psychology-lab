@@ -1,0 +1,187 @@
+[
+  {
+    "details" : "maximum channel error 0.0",
+    "passed" : true,
+    "test" : "neutral ramp identity"
+  },
+  {
+    "details" : "minimum step 0.00013725483",
+    "passed" : true,
+    "test" : "look ramp monotonic"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "look black stays black"
+  },
+  {
+    "details" : "white RGB [0.95106417, 0.92276305, 0.81273276]",
+    "passed" : true,
+    "test" : "signature creamy highlight bounds"
+  },
+  {
+    "details" : "1.05 and 1.87 input remain distinct",
+    "passed" : true,
+    "test" : "over-range highlight separation"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "finite output"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "deterministic grain"
+  },
+  {
+    "details" : "mean 0.49989834",
+    "passed" : true,
+    "test" : "grain mean neutrality"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "monochrome grain"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "grain has variance"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "halation leaves black unchanged"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "halation spreads warm light"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "crop Original"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "crop 1:1"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "crop 4:5"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "crop 3:2"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "crop 16:9"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "preview bounded dimensions"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "invalid RAW rejected"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "JPEG export decodes at full dimensions"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "source bytes preserved"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "HEIC export decodes"
+  },
+  {
+    "details" : "max RGB error 0.0",
+    "passed" : true,
+    "test" : "neutral digital swatch accuracy"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "shadow lift responds"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "positive exposure responds"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "orientation fixture encoded"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "JPEG EXIF orientation applied once"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "synthetic Bayer DNG decode o1"
+  },
+  {
+    "details" : "extent (0.0, 0.0, 640.0, 480.0)",
+    "passed" : true,
+    "test" : "DNG orientation o1"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "RAW source preserved o1"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "synthetic Bayer DNG decode o6"
+  },
+  {
+    "details" : "extent (0.0, 0.0, 480.0, 640.0)",
+    "passed" : true,
+    "test" : "DNG orientation o6"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "RAW source preserved o6"
+  },
+  {
+    "details" : "18 percent gray red 0.04735294",
+    "passed" : true,
+    "test" : "signature shadow density"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "dark blue remains blue"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "near-black detail preserved"
+  },
+  {
+    "details" : "",
+    "passed" : true,
+    "test" : "edits persistence roundtrip"
+  }
+]
