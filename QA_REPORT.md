@@ -1,5 +1,23 @@
 # Grainlight QA audit — 30 October 2026
 
+## Shutter crash investigation — 31 October 2026
+
+A user reported immediate process termination when taking a photograph. Previous passing tests covered rendering and simulator startup; they did **not** validate a physical shutter capture. No iPhone crash report has yet been supplied, so attribution to this exact device crash remains provisional.
+
+A concrete invalid request was found: the app preferred Bayer RAW but set `photoQualityPrioritization = .quality` for every capture. The installed Apple SDK's `AVCapturePhotoOutput.h` explicitly requires `.speed` for Bayer RAW. The new CI step checks this contract directly from the Apple SDK and retains the excerpt. Request construction now uses speed for Bayer RAW, quality for ProRAW/processed capture, and a fresh settings object per request.
+
+The submission call is enclosed in an Objective-C exception boundary. A synchronous framework rejection is converted into an NSError and displayed, with the retained delegate and busy state released on the session queue. Swift `do/catch` alone cannot catch NSException. The boundary is tested by injecting a real Objective-C invalid-argument exception; this is not an induced sensor capture failure.
+
+Supported capture dimensions now prefer the largest available size at or below 13 million pixels (normally 12MP); if no such size exists, the smallest advertised size is used. This is a conservative memory/compatibility choice, not proof that the reported crash was memory pressure. RAW capture remains enabled.
+
+The simulator workflow now runs a Debug-only integration harness before the normal startup check. It constructs actual AVCapturePhotoSettings through the production factory, checks the Bayer rule, fresh request IDs, processed fallback and invalid capability handling, tests the exception boundary, injects five 4032×3024 JPEG payloads and a synthetic DNG through the production library, develops images on iOS Core Image, reloads edits, waits for a thumbnail, exports full-resolution JPEG, verifies original bytes, and deletes/reloads the generated records. This goes beyond a startup check, but does not exercise sensor acquisition, physical lens changes, Photos authorization/export, or real iPhone Bayer/ProRAW data.
+
+**Final hosted result: PASS** — [run 41172439569](https://github.com/Weather-Mister/psychology-lab/actions/runs/41172439569), source `8f7f37ef6349622fc3c784b69732da87d692a67e`, macOS 15 / Xcode 16.4. **25/25 iOS capture-path integration checks**, **37/37 native renderer checks**, SDK rule extraction, static checks, baseline comparison, Release device build, Debug simulator build/integration/normal startup all passed. Logs inspected. Real AVFoundation disconnected submission was rejected into NSError and the app continued; stopped-session shutter was safely ignored. This is failure-path reproduction in Simulator, not reproduction of the user's sensor crash. Normal app startup was observed separately after the harness.
+
+Machine-readable [capture-path results](docs/qa/shutter-crash-2026-10-31/capture-self-test.json) and [renderer results](docs/qa/shutter-crash-2026-10-31/renderer-results.json) are committed. [IPA artifact](https://github.com/Weather-Mister/psychology-lab/actions/runs/41172439569/artifacts/13032250980) and [full test/SDK evidence](https://github.com/Weather-Mister/psychology-lab/actions/runs/41172439569/artifacts/13031946706).
+
+Package inspected: valid ZIP CRC, ARM64 Mach-O, version 0.1.1/build 5. The `--capture-self-test` entry string is absent from the Release executable; test mode is Debug-only. IPA size 341,664 bytes; SHA-256 `432cf192c5dd2e01821ba351b81a3b810586c529ca6dbbebd56ffd0ca25c75bc`. Unsigned, requiring sideload signing. The psychology backup branch is preserved. The confirmed request defect is fixed, but the user's exact crash and physical-device capture still require an iPhone test/crash report. This patch is version 0.1.1 (build 5); the old art-direction evidence is retained below.
+
 ## Shadow-density refinement and RAW format visibility
 
 Application source `70602ea6d0172b8d8bfe482ad7d381fbc1e14596` adds a luminance-dependent density stage after LUT interpolation. It deepens shadows/lower midtones while retaining bright cream highlights, and strengthens cool shadow separation. Neutral mode bypasses it. Applying density inside the LUT initially caused a monotonic-ramp regression; the unchanged native test caught it, and density now operates after interpolation.
