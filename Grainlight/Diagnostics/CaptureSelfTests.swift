@@ -39,6 +39,18 @@ enum CaptureSelfTests {
             var noError: NSError?
             check("exception boundary normal success",GLPerformSafely({},&noError) && noError == nil)
 
+            let disconnectedOutput = AVCapturePhotoOutput()
+            let disconnectedDelegate = DisconnectedPhotoDelegate()
+            var rejectedRequestError: NSError?
+            let accepted = GLPerformSafely({
+                disconnectedOutput.capturePhoto(with: jpeg, delegate: disconnectedDelegate)
+            }, &rejectedRequestError)
+            check("real AVFoundation disconnected request safely rejected",!accepted && rejectedRequestError != nil)
+            let stoppedCamera = CameraService()
+            stoppedCamera.capture()
+            try await Task.sleep(nanoseconds:100_000_000)
+            check("shutter before session ready is ignored safely",!stoppedCamera.isCapturing && stoppedCamera.errorMessage == nil)
+
             let library = PhotoLibrary()
             let format = UIGraphicsImageRendererFormat(); format.scale = 1
             let fixture = UIGraphicsImageRenderer(size:CGSize(width:4032,height:3024),format:format).image { c in
@@ -87,5 +99,8 @@ enum CaptureSelfTests {
         }
         return passed ? "Capture-path checks passed" : "Capture-path checks failed"
     }
+}
+private final class DisconnectedPhotoDelegate: NSObject, AVCapturePhotoCaptureDelegate {
+    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {}
 }
 #endif
