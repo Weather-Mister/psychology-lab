@@ -143,6 +143,19 @@ check("dark blue remains blue",blue[2]>blue[0] && blue[2]>blue[1])
 let nearBlack=fixture(64,64){_,_ in [0.015,0.015,0.015,1]}
 let shadowDetail=pixels(render(nearBlack,look))
 check("near-black detail preserved",shadowDetail[1]>0 && shadowDetail[1]<dense[1])
+let daylightBlue=fixture(64,64){_,_ in [0.30,0.60,0.90,1]}
+let daylight=pixels(render(daylightBlue,look))
+check("bright blue remains chromatic",daylight[2]-daylight[0]>0.12 && daylight[1]>daylight[0],"RGB \(Array(daylight.prefix(3)))")
+let creamPatch=fixture(64,64){_,_ in [0.85,0.85,0.85,1]}
+let creamRGB=pixels(render(creamPatch,look))
+check("bright neutral remains gently warm",creamRGB[0]>creamRGB[2] && creamRGB[0]-creamRGB[2]<0.2)
+let terracotta=fixture(64,64){_,_ in [0.60,0.29,0.15,1]}
+let earthRGB=pixels(render(terracotta,look))
+check("earth tones retain channel order",earthRGB[0]>earthRGB[1] && earthRGB[1]>earthRGB[2])
+let night=fixture(256,128){x,y in x>120 && x<136 && y>52 && y<76 ? [1,0.82,0.52,1]:[0.025,0.03,0.035,1]}
+try write(render(night,.signature),"night-light-probe")
+try write(render(daylightBlue,.signature),"daylight-blue-probe")
+try write(render(terracotta,.signature),"earth-tone-probe")
 let editsData=try JSONEncoder().encode(PhotoEdits.signature)
 check("edits persistence roundtrip",try JSONDecoder().decode(PhotoEdits.self,from:editsData)==PhotoEdits.signature)
 try JSONSerialization.data(withJSONObject:results,options:[.prettyPrinted,.sortedKeys]).write(to:output.appendingPathComponent("results.json"))

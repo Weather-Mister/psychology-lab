@@ -39,7 +39,7 @@ struct PreferencesView: View {
                 Section("ABOUT") {
                     Text("Grainlight is an independent demonstration project. It is not affiliated with Chromagraph, Chromatic Applications, Rian Johnson, Steve Yedlin, or Eric Cameron. Its image processing uses independent mathematical approximations, not their proprietary pipeline.")
                         .font(.footnote).foregroundStyle(.secondary)
-                    Text("Version 0.1 · iOS 17+")
+                    Text("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—") (\(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—")) · iOS 17+")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }

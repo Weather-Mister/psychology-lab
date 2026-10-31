@@ -226,22 +226,20 @@ final class FilmRenderer: @unchecked Sendable {
                 for r in 0..<size {
                     let rgb = [Double(r), Double(g), Double(b)].map { $0 / Double(size - 1) }
                     let y = rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722
-                    let chroma = 0.78 + 0.07 * (1 - y)
+                    let chroma = 0.84 + 0.04 * (1 - y)
                     var colors = rgb.map { filmic(y + ($0 - y) * chroma) }
                     let shadow = pow(1 - y, 2) * y
-                    let highlight = pow(y, 1.3)
-                    let skyWeight = pow(clamp((y - 0.40) / 0.40), 2)
-                    let blueExcess = max(0, rgb[2] - rgb[0] - 0.04) * skyWeight
-                    // Warmer pale highlights and blue/green lowlights. Sky blue
-                    // shifts toward ivory without stamping a uniform sepia filter.
-                    colors[0] = clamp(colors[0] + highlight * 0.10 - shadow * 0.18 + blueExcess * 0.35)
-                    colors[1] = clamp(colors[1] + highlight * 0.065)
-                    colors[2] = clamp(colors[2] + shadow * 0.12 - highlight * 0.065 - blueExcess * 0.50)
-                    // Bright blue sky approaches a luminous cream; dark blues are gated out.
-                    let skyMix = clamp(blueExcess * 8)
-                    let skyTone = 0.55 + 0.45 * filmic(y)
-                    let cream = [clamp(skyTone + 0.055), clamp(skyTone + 0.025), clamp(skyTone - 0.045)]
-                    colors = zip(colors, cream).map { $0 * (1 - skyMix) + $1 * skyMix }
+                    // Warm neutrals, rather than forcing every bright blue into cream.
+                    // Ignore near-neutral cube-cell chroma to preserve interpolated gray ramps.
+                    let spread = rgb.max()! - rgb.min()!
+                    let colored = clamp((spread - 0.04) / 0.40)
+                    let highlight = pow(y, 1.3) * (1 - 0.8 * colored)
+                    let bright = pow(clamp((y - 0.35) / 0.5), 2)
+                    let blue = max(0, rgb[2] - rgb[0] - 0.04) * bright
+                    let green = max(0, rgb[1] - max(rgb[0], rgb[2]) - 0.04)
+                    colors[0] = clamp(colors[0] + highlight * 0.085 - shadow * 0.18 - blue * 0.08 + green * 0.05)
+                    colors[1] = clamp(colors[1] + highlight * 0.045 + blue * 0.12 - green * 0.02)
+                    colors[2] = clamp(colors[2] + shadow * 0.12 - highlight * 0.055 - blue * 0.03 - green * 0.02)
                     floats.append(contentsOf: colors.map { Float($0) })
                     floats.append(1)
                 }
