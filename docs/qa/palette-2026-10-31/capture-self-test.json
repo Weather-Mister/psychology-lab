@@ -1,0 +1,106 @@
+{
+  "passed" : true,
+  "scope" : "Real iOS settings objects and injected JPEG\/DNG payloads. No sensor capture on Simulator.",
+  "tests" : [
+    {
+      "passed" : true,
+      "test" : "prefer supported 12MP over 48MP"
+    },
+    {
+      "passed" : true,
+      "test" : "reject invalid dimensions"
+    },
+    {
+      "passed" : true,
+      "test" : "fixture is recognized as Bayer"
+    },
+    {
+      "passed" : true,
+      "test" : "Bayer uses speed (SDK requirement)"
+    },
+    {
+      "passed" : true,
+      "test" : "Bayer request retains RAW pixel format"
+    },
+    {
+      "passed" : true,
+      "test" : "RAW request uses configured dimensions"
+    },
+    {
+      "passed" : true,
+      "test" : "each capture has fresh unique settings"
+    },
+    {
+      "passed" : true,
+      "test" : "JPEG fallback uses processed format"
+    },
+    {
+      "passed" : true,
+      "test" : "JPEG can use quality"
+    },
+    {
+      "passed" : true,
+      "test" : "no codec rejected"
+    },
+    {
+      "passed" : true,
+      "test" : "invalid resolution rejected"
+    },
+    {
+      "passed" : true,
+      "test" : "Objective-C submission exception becomes NSError"
+    },
+    {
+      "passed" : true,
+      "test" : "exception boundary normal success"
+    },
+    {
+      "passed" : true,
+      "test" : "real AVFoundation disconnected request safely rejected"
+    },
+    {
+      "passed" : true,
+      "test" : "shutter before session ready is ignored safely"
+    },
+    {
+      "passed" : true,
+      "test" : "five 12MP capture payloads persist"
+    },
+    {
+      "passed" : true,
+      "test" : "capture survives index reload"
+    },
+    {
+      "passed" : true,
+      "test" : "12MP capture develops on iOS"
+    },
+    {
+      "passed" : true,
+      "test" : "capture exports full resolution JPEG"
+    },
+    {
+      "passed" : true,
+      "test" : "capture source bytes unchanged by edits\/export"
+    },
+    {
+      "passed" : true,
+      "test" : "capture produces thumbnail"
+    },
+    {
+      "passed" : true,
+      "test" : "RAW capture payload retained as DNG"
+    },
+    {
+      "passed" : true,
+      "test" : "synthetic RAW capture develops on iOS"
+    },
+    {
+      "passed" : true,
+      "test" : "delete persists"
+    },
+    {
+      "passed" : true,
+      "test" : "no library errors"
+    }
+  ]
+}

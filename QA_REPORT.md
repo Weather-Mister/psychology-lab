@@ -1,5 +1,17 @@
 # Grainlight QA audit — 30 October 2026
 
+## Expanded reference palette — 31 October 2026
+
+Four further finished JPEG references were supplied: daylight house/trees, a night building, a warm tiled interior, and a Taipei sky/street scene. These are look targets without paired unprocessed inputs. Their missing ICC tags prevent calibrated colorimetric inference; no same-RAW equivalence score is possible.
+
+The broader set shows that blue skies should not universally become cream. The new signature removes the strong bright-blue-to-cream substitution. It retains blue with a restrained cyan bias, adds warmth primarily to near-neutral highlights, keeps cool dense shadows and warm earth tones, and slightly steers excess green toward olive. Gray-ramp protection is retained. Default halation is reduced from 0.38 to 0.18 for new/reset edits; existing per-photo texture values are preserved. Grain and the RAW capture crash fixes are retained. Preferences now displays the actual bundle version/build.
+
+Source `fd5d288011734e289d619d64ac09b5ba70d0bf18`, version 0.1.2/build 6. [Focused rendering run 41173652165](https://github.com/Weather-Mister/psychology-lab/actions/runs/41173652165) passed **40/40 assertions**, adding bright-blue retention, gently warm neutral highlights, and earth-tone channel order. Daylight, warm earth and night-light controlled probes were generated. The bright-blue test output is `[0.1693, 0.4165, 0.6599]`; the minimum gray-ramp red-channel step stays positive at `0.00013725483`. These describe software behavior, not sensor color accuracy.
+
+Actual old/new output from the same existing screenshot input was visually inspected. The old output's sky is cream; the revised output is muted blue with warm clouds. The four new finished references themselves were not run through the look again, and were not published in the repository. The existing screenshot probe remains an approximate visual aid with baked processing and different framing from its original target. This update follows the broader art direction rather than optimizing a score against that single warm-sky target.
+
+Full hosted [run 41173652148](https://github.com/Weather-Mister/psychology-lab/actions/runs/41173652148) passed: **40 renderer assertions**, **25 iOS simulator capture-path checks**, installed-SDK contract check, static checks, baseline comparison, device and simulator builds, integration/startup and packaging. Final logs inspected; simulator test PID 15655 and normal startup PID 16256 were observed. Release test-mode entry absent; ARM64 Mach-O and ZIP CRC checked. Version 0.1.2/build 6, 341,606 bytes; SHA-256 `fa21462bbe3aa3eaee84af67ff1a94825e7dc2a81dc51b61150eb1c6c8aa5579`. Unsigned; physical sensor capture and photographic equivalence remain unverified. [IPA artifact](https://github.com/Weather-Mister/psychology-lab/actions/runs/41173652148/artifacts/13032601561), [evidence](https://github.com/Weather-Mister/psychology-lab/actions/runs/41173652148/artifacts/13032626437). Historical test counts and measurements below refer to their named earlier revisions.
+
 ## Shutter crash investigation — 31 October 2026
 
 A user reported immediate process termination when taking a photograph. Previous passing tests covered rendering and simulator startup; they did **not** validate a physical shutter capture. No iPhone crash report has yet been supplied, so attribution to this exact device crash remains provisional.
