@@ -156,7 +156,7 @@ final class CameraService: NSObject, ObservableObject {
 
     private func configureBestResolution(for device: AVCaptureDevice) {
         let choices = device.activeFormat.supportedMaxPhotoDimensions
-        if let best = choices.max(by: { Int($0.width) * Int($0.height) < Int($1.width) * Int($1.height) }) {
+        if let best = Self.preferredDimensions(choices) {
             photoOutput.maxPhotoDimensions = best
         }
     }
@@ -184,20 +184,14 @@ final class CameraService: NSObject, ObservableObject {
             guard let self, self.configured, self.session.isRunning, !self.session.isInterrupted, !self.inFlight,
                   let connection = self.photoOutput.connection(with: .video), connection.isActive else { return }
             if connection.isVideoRotationAngleSupported(90) { connection.videoRotationAngle = 90 }
-            self.inFlight = true
-            let bayer = self.photoOutput.availableRawPhotoPixelFormatTypes.first {
-                AVCapturePhotoOutput.isBayerRAWPixelFormat($0)
-            }
-            let rawFormat = bayer ?? self.photoOutput.availableRawPhotoPixelFormatTypes.first
             let settings: AVCapturePhotoSettings
-            if let rawFormat {
-                settings = AVCapturePhotoSettings(rawPixelFormatType: rawFormat)
-            } else {
-                settings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.jpeg])
-            }
-            settings.photoQualityPrioritization = .quality
-            settings.maxPhotoDimensions = self.photoOutput.maxPhotoDimensions
-            // Never request an unsupported flash mode.
+            do {
+                settings = try Self.makePhotoSettings(
+                    rawFormats: self.photoOutput.availableRawPhotoPixelFormatTypes,
+                    dimensions: self.photoOutput.maxPhotoDimensions,
+                    jpegAvailable: self.photoOutput.availablePhotoCodecTypes.contains(.jpeg))
+            } catch { self.report(error.localizedDescription); return }
+            self.inFlight = true
             if self.photoOutput.supportedFlashModes.contains(.off) { settings.flashMode = .off }
             DispatchQueue.main.async { self.isCapturing = true }
             let delegate = PhotoCaptureDelegate { [weak self] data, raw, error in
@@ -214,8 +208,48 @@ final class CameraService: NSObject, ObservableObject {
                 }
             }
             self.photoDelegate = delegate
-            self.photoOutput.capturePhoto(with: settings, delegate: delegate)
+            var submissionError: NSError?
+            let submitted = GLPerformSafely({
+                self.photoOutput.capturePhoto(with: settings, delegate: delegate)
+            }, &submissionError)
+            if !submitted {
+                self.inFlight = false
+                self.photoDelegate = nil
+                DispatchQueue.main.async { self.isCapturing = false }
+                self.report(submissionError?.localizedDescription ?? "Camera rejected the capture. Reopen the camera and retry.")
+            }
         }
+    }
+
+    // These functions are exercised using real AVCapturePhotoSettings on iOS Simulator.
+    static func preferredDimensions(_ choices: [CMVideoDimensions]) -> CMVideoDimensions? {
+        let valid = choices.filter { $0.width > 0 && $0.height > 0 }
+        let modest = valid.filter { Int64($0.width) * Int64($0.height) <= 13_000_000 }
+        if let best = modest.max(by: { Int64($0.width) * Int64($0.height) < Int64($1.width) * Int64($1.height) }) { return best }
+        return valid.min(by: { Int64($0.width) * Int64($0.height) < Int64($1.width) * Int64($1.height) })
+    }
+
+    static func makePhotoSettings(rawFormats: [OSType], dimensions: CMVideoDimensions,
+                                  jpegAvailable: Bool) throws -> AVCapturePhotoSettings {
+        guard dimensions.width > 0 && dimensions.height > 0 else {
+            throw NSError(domain: "Grainlight.Camera", code: 1, userInfo: [NSLocalizedDescriptionKey: "Camera resolution is unavailable."])
+        }
+        let bayer = rawFormats.first { AVCapturePhotoOutput.isBayerRAWPixelFormat($0) }
+        let rawFormat = bayer ?? rawFormats.first
+        let settings: AVCapturePhotoSettings
+        if let rawFormat {
+            settings = AVCapturePhotoSettings(rawPixelFormatType: rawFormat)
+            // SDK capturePhoto rules: Bayer RAW requires speed. ProRAW can use quality.
+            settings.photoQualityPrioritization = bayer != nil ? .speed : .quality
+        } else {
+            guard jpegAvailable else {
+                throw NSError(domain: "Grainlight.Camera", code: 2, userInfo: [NSLocalizedDescriptionKey: "No supported photo format is available."])
+            }
+            settings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.jpeg])
+            settings.photoQualityPrioritization = .quality
+        }
+        settings.maxPhotoDimensions = dimensions
+        return settings
     }
 
     private func updateRawAvailability() {

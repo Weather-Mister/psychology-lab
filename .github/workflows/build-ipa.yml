@@ -27,6 +27,9 @@ jobs:
       - name: Show installed Xcode
         run: xcodebuild -version
 
+      - name: Check installed Apple SDK capture rules
+        run: python3 qa/check_sdk_capture_rules.py "$(xcrun --sdk iphoneos --show-sdk-path)" "$RUNNER_TEMP/grainlight-qa"
+
       - name: Independent QA checks
         run: |
           python3 qa/qa_camera.py
